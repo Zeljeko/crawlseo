@@ -40,10 +40,11 @@ Done:
 - `extensions/ab/wordpress/client.ts`: draft-only WordPress client. `createDraft({ kind, title, content })` is its only method. `assertDraftOnly()` blocks anything but `POST /wp/v2/pages|posts` with `status: "draft"`; titles get `[AI DRAFT] `.
 - `extensions/ab/ai/client.ts`: `generate({ task, system, input, schema })`, the one AI entry point. Model `claude-sonnet-5-5`, `messages.parse` + zod schema, SDK `maxRetries: 1`, per-task `max_tokens`/effort, logs tokens and cost. `wrapUntrusted()` truncates crawled text to 8,000 chars inside `<untrusted_page_content>`.
 - `extensions/ab/audit.ts`: `logAudit(db, entry)`.
+- `extensions/ab/content/company-facts.md`: the only source of claims for AI writing. Items marked `NEEDS FOUNDER CHECK` must not reach website copy.
 
 Planned:
 - `extensions/index.ts`: register AB job handlers.
-- `extensions/ab/`: job handlers, company facts.
+- `extensions/ab/`: job handlers.
 - `app/(dashboard)/sites/[siteId]/ab/`: review queue and history pages.
 - Prisma: our models in a marked block at the end of `schema.prisma`, own migration. Planned names `AbSuggestion` and `AbAuditLog`: upstream already uses the `Audit*` prefix for crawl tables (`AuditPage`, `AuditLink`), so the `Ab` prefix avoids clashes with future upstream models.
 
