@@ -34,10 +34,16 @@ Job handler shape (`lib/jobs/types.ts`): `{ type, class: "LONG" | "SHORT", maxAt
 
 Data we read for AI fixes: `AuditPage` (url, title, description, h1s, wordCount, statusCode) and `CrawlIssue` (type, severity, message, url) for the latest `Crawl` of a site.
 
-## Our code (planned)
+## Our code
 
+Done:
+- `extensions/ab/wordpress/client.ts`: draft-only WordPress client. `createDraft({ kind, title, content })` is its only method. `assertDraftOnly()` blocks anything but `POST /wp/v2/pages|posts` with `status: "draft"`; titles get `[AI DRAFT] `.
+- `extensions/ab/ai/client.ts`: `generate({ task, system, input, schema })`, the one AI entry point. Model `claude-sonnet-5-5`, `messages.parse` + zod schema, SDK `maxRetries: 1`, per-task `max_tokens`/effort, logs tokens and cost. `wrapUntrusted()` truncates crawled text to 8,000 chars inside `<untrusted_page_content>`.
+- `extensions/ab/audit.ts`: `logAudit(db, entry)`.
+
+Planned:
 - `extensions/index.ts`: register AB job handlers.
-- `extensions/ab/`: AI client, WordPress client, job handlers, company facts.
+- `extensions/ab/`: job handlers, company facts.
 - `app/(dashboard)/sites/[siteId]/ab/`: review queue and history pages.
 - Prisma: our models in a marked block at the end of `schema.prisma`, own migration. Planned names `AbSuggestion` and `AbAuditLog`: upstream already uses the `Audit*` prefix for crawl tables (`AuditPage`, `AuditLink`), so the `Ab` prefix avoids clashes with future upstream models.
 
@@ -48,6 +54,8 @@ Every change to an upstream file. Keep this list short.
 | File | Change | Why |
 |---|---|---|
 | `lib/crawler/engine.ts` | `BATCH_SIZE` and `FETCH_TIMEOUT_MS` read `CRAWL_BATCH_SIZE` / `CRAWL_FETCH_TIMEOUT_MS` from env; defaults unchanged | The AB site needs 2+ s per page. 15 parallel requests pushed it to ~14 s and past the 12 s timeout, so pages showed as false `BROKEN_LINK`. No hook controls crawl speed |
+| `prisma/schema.prisma` | Appended block "AB FORK" with `AbSuggestion`, `AbAuditLog` at the end. No upstream model touched | Our tables. Migration `20261123100616_ab_suggestion_audit_log` only creates them |
+| `package.json`, `package-lock.json` | Added `@anthropic-ai/sdk` 1.12.0 (pinned) and its 6 deps | AI client. The lock was merged by hand: only new entries added. Running `npm install` on Windows (npm 10/11) strips the `libc` markers the Alpine image needs, so on conflict re-merge, do not regenerate |
 
 Planned, not done: sidebar link to the AB pages (`components/layout/sidebar-nav.tsx`), "Suggest fix" button on the crawl issue list (`app/(dashboard)/sites/[siteId]/crawl/page.tsx`).
 
