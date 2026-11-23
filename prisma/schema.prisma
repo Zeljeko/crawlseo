@@ -523,3 +523,45 @@ model SchedulerState {
   key String   @id
   at  DateTime
 }
+
+// ============ AB FORK: AI Website Optimizer ============
+// Our models only. Upstream models are never changed; we reference them by id
+// (siteId) without a Prisma relation, so no upstream model gets a new field.
+// See docs/AB-CODEMAP.md.
+
+// One AI suggestion waiting for (or past) human review.
+model AbSuggestion {
+  id           String    @id @default(cuid())
+  siteId       String
+  pageUrl      String?   // null for a new page draft
+  issueRef     String?   // CrawlIssue id this fix answers, if any
+  type         String    // "title" | "meta_description" | "new_page"
+  oldValue     String?
+  newValue     String
+  rationale    String?
+  status       String    @default("pending") // "pending" | "approved" | "rejected"
+  wpPostId     Int?      // set when an approved new_page became a WordPress draft
+  model        String
+  inputTokens  Int
+  outputTokens Int
+  estCostUsd   Float
+  createdAt    DateTime  @default(now())
+  decidedAt    DateTime?
+  decidedBy    String?   // user email
+
+  @@index([siteId, status, createdAt])
+}
+
+// Every approve, reject and WordPress write.
+model AbAuditLog {
+  id         String   @id @default(cuid())
+  actor      String   // user email, or "system"
+  action     String   // e.g. "suggestion.approve", "wp.create_draft"
+  targetType String   // e.g. "suggestion"
+  targetId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
