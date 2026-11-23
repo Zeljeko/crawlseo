@@ -17,6 +17,7 @@ import {
   Bot,
   Link as LinkIcon,
   SearchCheck,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,6 +50,8 @@ export function SidebarNav({
         label: "Workspace",
         items: [
           { href: `/sites/${activeSiteId}`, label: "Overview", icon: LayoutDashboard, exact: true },
+          // AB fork: AI Website Optimizer (app/(dashboard)/sites/[siteId]/ab)
+          { href: `/sites/${activeSiteId}/ab`, label: "AI Optimizer", icon: Sparkles },
           { href: `/sites/${activeSiteId}/keywords`, label: "Keywords", icon: Search },
           { href: `/sites/${activeSiteId}/saved-keywords`, label: "Saved keywords", icon: Bookmark },
           { href: `/sites/${activeSiteId}/pages`, label: "Pages", icon: FileText },

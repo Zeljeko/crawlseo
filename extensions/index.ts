@@ -16,11 +16,14 @@
  * all routes, server actions and the job loop of that process.
  */
 
+import { registerAbJobs } from "./ab/jobs";
+
 const holder = globalThis as unknown as { crawlseoExtensionsRegistered?: boolean };
 
 /** Registers this deployment's extensions. Safe to call more than once. */
 export function registerExtensions(): void {
   if (holder.crawlseoExtensionsRegistered) return;
   holder.crawlseoExtensionsRegistered = true;
-  // Nothing to register in the open-source app.
+  // AB fork: AI Website Optimizer jobs (extensions/ab/jobs.ts).
+  registerAbJobs();
 }

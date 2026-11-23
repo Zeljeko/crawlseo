@@ -14,7 +14,7 @@ Short map of crawlseo v0.3.6 for the AI Website Optimizer fork. Read with `docs/
 | `setCrawlPolicy` | `lib/jobs/policy.ts` | Only decides whether a crawl may start. Does not control crawl speed |
 | `setSitePolicy` | `lib/site-policy.ts` | Not needed for MVP |
 
-Job handler shape (`lib/jobs/types.ts`): `{ type, class: "LONG" | "SHORT", maxAttempts, isPermanent, run(ctx) }`. `ctx` has `db`, `job` (with `payload`), `signal`. Throw `JobError(msg, { permanent: true })` for errors a retry cannot fix. AI jobs: class `SHORT`, `maxAttempts: 2` (max 1 retry).
+Job handler shape (`lib/jobs/types.ts`): `{ type, class: "LONG" | "SHORT", maxAttempts, isPermanent, run(ctx) }`. `ctx` has `db`, `job` (with `payload`), `signal`. Throw `JobError(msg, { permanent: true })` for errors a retry cannot fix. AI jobs: class `SHORT`, `maxAttempts: 1` (the Anthropic SDK already retries once; every attempt costs money).
 
 ## Where things live
 
@@ -42,11 +42,19 @@ Done:
 - `extensions/ab/audit.ts`: `logAudit(db, entry)`.
 - `extensions/ab/content/company-facts.md`: the only source of claims for AI writing. Items marked `NEEDS FOUNDER CHECK` must not reach website copy.
 
-Planned:
-- `extensions/index.ts`: register AB job handlers.
-- `extensions/ab/`: job handlers.
-- `app/(dashboard)/sites/[siteId]/ab/`: review queue and history pages.
-- Prisma: our models in a marked block at the end of `schema.prisma`, own migration. Planned names `AbSuggestion` and `AbAuditLog`: upstream already uses the `Audit*` prefix for crawl tables (`AuditPage`, `AuditLink`), so the `Ab` prefix avoids clashes with future upstream models.
+- `extensions/index.ts`: calls `registerAbJobs()`.
+- `extensions/ab/jobs.ts`: job types `ab-suggest-fix` (payload `{ pageUrl, field, actor }`) and `ab-page-draft` (`{ topic, actor }`). Suggest fix reads the page from the latest crawl (`AuditPage`), fetches its live text, writes one title or meta. Over the limit (title 60, meta 155): one more AI call, then cut at a word. Page draft output is cleaned by `html.ts` before it is stored.
+- `extensions/ab/writing.ts`: prompts, zod output schemas, length rules, page topics. `new_page` suggestions store `newValue` as JSON `{ title, metaDescription, contentHtml, words }`.
+- `extensions/ab/html.ts`: allowlist HTML sanitizer (h2-h4, p, lists, strong/em, a with safe href, br), page text extraction.
+- `extensions/ab/service.ts`: what the API routes do (owner check, queue jobs, approve/reject). Approve claims the pending row first, so a double click never makes two WordPress drafts; a WordPress failure puts it back to pending and logs `wordpress.draft_failed`.
+- `extensions/ab/display.ts`: plain-words cost and labels.
+- `extensions/ab/content/company-facts.generated.ts`: built from `company-facts.md` by `node extensions/ab/content/build-facts.mjs`. Run it after every facts edit; a test fails when it is stale. (Bundled, so Vercel and the worker need no file reads.)
+- API: `POST /api/ab/sites/[siteId]/suggest`, `POST /api/ab/sites/[siteId]/draft` (both `maxDuration = 300`, return a job id polled via `/api/jobs/[jobId]`), `POST /api/ab/suggestions/[suggestionId]` (`{ decision }`).
+- Pages: `/sites/[siteId]/ab` (fix list, page draft form, review queue, recently decided, total spend) and `/sites/[siteId]/ab/history` (`AbAuditLog` rows whose `details.siteId` matches).
+
+Audit actions: `suggestion.created`, `suggestion.approved`, `suggestion.rejected`, `wordpress.draft_created`, `wordpress.draft_failed`. Every row's `details` has `siteId`.
+
+Deviation from the plan: no "Suggest fix" button on the upstream crawl page. The AB page lists the title and meta problems itself, so the crawl page stays untouched.
 
 ## Upstream edits
 
@@ -56,9 +64,8 @@ Every change to an upstream file. Keep this list short.
 |---|---|---|
 | `lib/crawler/engine.ts` | `BATCH_SIZE` and `FETCH_TIMEOUT_MS` read `CRAWL_BATCH_SIZE` / `CRAWL_FETCH_TIMEOUT_MS` from env; defaults unchanged | The AB site needs 2+ s per page. 15 parallel requests pushed it to ~14 s and past the 12 s timeout, so pages showed as false `BROKEN_LINK`. No hook controls crawl speed |
 | `prisma/schema.prisma` | Appended block "AB FORK" with `AbSuggestion`, `AbAuditLog` at the end. No upstream model touched | Our tables. Migration `20261123100616_ab_suggestion_audit_log` only creates them |
+| `components/layout/sidebar-nav.tsx` | One "AI Optimizer" link (and the `Sparkles` icon import) in the Workspace group | Way into our pages; there is no UI hook |
 | `package.json`, `package-lock.json` | Added `@anthropic-ai/sdk` 1.12.0 (pinned) and its 6 deps | AI client. The lock was merged by hand: only new entries added. Running `npm install` on Windows (npm 10/11) strips the `libc` markers the Alpine image needs, so on conflict re-merge, do not regenerate |
-
-Planned, not done: sidebar link to the AB pages (`components/layout/sidebar-nav.tsx`), "Suggest fix" button on the crawl issue list (`app/(dashboard)/sites/[siteId]/crawl/page.tsx`).
 
 Not upstream edits (new files only): `docker-compose.override.yml` (build from fork, app on `127.0.0.1:3001`), `docs/HANDOVER.md`, this file.
 
