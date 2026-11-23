@@ -1,0 +1,14 @@
+# AB fork: local overrides. Compose merges this file over docker-compose.yml
+# automatically, so the upstream file stays untouched (see docs/HANDOVER.md 3a).
+services:
+  app:
+    # Build from this fork, never pull ghcr.io/crawlseo/crawlseo:latest.
+    build: .
+    image: ab-website-optimizer:local
+    # Localhost only, host port 3001 (3000 is reserved for other apps).
+    ports: !override
+      - "127.0.0.1:3001:3000"
+
+  worker:
+    # Same image the app service builds.
+    image: ab-website-optimizer:local
