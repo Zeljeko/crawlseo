@@ -36,7 +36,10 @@ Business goal behind it: reposition AB on its website as a **general BPO / outso
 | Base | **Fork of crawlseo** (github.com/crawlseo/crawlseo, MIT), pinned at **v0.3.6** | It already has crawler, issue list, Search Console, scheduler, job queue, auth, DB, UI |
 | Stack | crawlseo's stack (TypeScript / Next.js / PostgreSQL). Not Python/FastAPI | One app, one DB, one deploy. Sole developer must maintain it |
 | Custom code | Through crawlseo's **official fork extension hooks** (`extensions/index.ts`, since v0.3.2) + our own folders. Minimal edits to upstream files | Upstream designed this so forks merge cleanly. See section 3a |
-| Hosting | Zj's **Windows laptop, in Docker**, app on **host port 3001** | Laptop is the company server for now. Mac Mini / VPS later |
+| Hosting (dev) | Zj's **Windows laptop, in Docker**, app on **127.0.0.1:3001** | Where we build and test |
+| Hosting (demo) | **Vercel Hobby (free) + Neon Postgres (free)**, decided Day 1 | The founder (non-technical) must open it from any computer to show clients. Marketing/demo use; full adoption not decided. Hobby is non-commercial by Vercel's terms: accepted risk, switch to Pro if adopted |
+| DB table names | `AbSuggestion`, `AbAuditLog` (not `Suggestion` / `AuditLog`) | Upstream already uses the `Audit*` prefix; `Ab` avoids future clashes |
+| AI limits | `meta_fix` max_tokens 1,000 effort low; `page_draft` max_tokens 6,000 effort medium | Sonnet 5.5 bills thinking as output; 400 / 3,000 risked cut-off JSON. Real meta fix cost: $0.0021 |
 | AI | **Anthropic API, Claude Sonnet 5.5** (`claude-sonnet-5-5`), $2 / $10 per 1M tokens in/out | Quality matters (public website copy). **Only $20 prepaid exists.** No free LLM routers |
 | AI calls | All behind **one wrapper function** | Provider/model can be swapped in one place |
 | Design | Pipeline, human in the loop, drafts only | Safety and predictability |
@@ -60,7 +63,8 @@ Rules, in priority order:
 
 **WordPress**
 - Tool user `ai-optimizer`, role **Editor**, application password created and stored by Zj.
-- Tested: `POST /wp-json/wp/v2/pages` with `status: draft` works (created test page id 1440; make sure it's trashed).
+- Tested: `POST /wp-json/wp/v2/pages` with `status: draft` works. Test page 1440 is trashed (checked Day 1). Day 1 test draft **1442** must be trashed by Zj.
+- `GET /wp-json/wp/v2/users/me` returns 403 (site blocks it). Not needed.
 - Plugins: Classic Editor, Duplicate Page, Easy WP SMTP, Elementor, Elementor Pro, Klaviyo, Meta Pixel, Site Kit by Google, Ultimate Addons for Elementor Lite, Unlimited Elements for Elementor, Wordfence (**inactive**).
 - **No SEO plugin** (no Yoast / Rank Math) → there is **no meta description field** in WordPress right now.
 - **Elementor** is used for page design → API-created drafts will look plain and need design later.
@@ -70,9 +74,14 @@ Rules, in priority order:
 - **Google Cloud project** `ab-website-optimizer`: Search Console API enabled, OAuth consent screen **Internal** (only `@ab-businesssupport.com` accounts can log in), Web client with origin `http://localhost:3001` and redirect `http://localhost:3001/api/auth/callback/google`. Zj has the client ID/secret.
 - **Google Analytics:** two GA4 IDs (`G-7PNB8PBLTZ`, `G-PKK1R993FM`) + `GTM-M8JT7D6N` already on the site, owned by someone else. **Out of scope.** Do not create a new GA property.
 
-**Not done yet**
-- crawlseo not forked/cloned yet.
-- Company facts file not written yet.
+**Status after Day 1 (2026-11-23)**: see section 8 for the checklist.
+- Fork: `github.com/Zeljeko/crawlseo`, branch `ab-main` from tag `v0.3.6`, local clone `D:\Codebases\website-optimizer\crawlseo`. `upstream` = crawlseo/crawlseo.
+- Running locally: app, worker, db healthy on `127.0.0.1:3001`. Google login works. `.env` has Google, Anthropic and WordPress secrets (Zj pasted them).
+- Crawl: 39 pages, 148 issues (37 missing meta descriptions). The site answers in 2+ s per page, so the worker uses `CRAWL_BATCH_SIZE=4`, `CRAWL_FETCH_TIMEOUT_MS=30000` (set in `docker-compose.override.yml`).
+- Both real connections tested: Anthropic call OK ($0.0021), WordPress draft created through our client (id 1442, not public).
+- Company facts file v1 is written. A staff questionnaire to confirm and extend it is in a Claude doc: https://claude.ai/artifact/WJbgwmKghzJVNgm7aWpVXo (Zj shares it).
+- Code map and the list of upstream edits: `docs/AB-CODEMAP.md`.
+- Network on the laptop is unstable: Docker builds failed 3 times on `npm ci` timeouts or DNS. Retry once; avoid adding packages.
 
 ## 5. MVP scope (the Wednesday deliverable)
 
@@ -128,19 +137,45 @@ Weekly report email, Google Analytics, PageSpeed, AI visibility sampling, schema
 6. Add the two tables (new migration). Add WordPress + Anthropic clients (no UI yet). Unit-test the WP client refuses anything except draft creation.
 7. Draft the company facts file.
 
-### Day 2 (Tuesday): the "hands"
-1. "Suggest fix" action on issues → job → `Suggestion` row.
-2. "New page draft" action → job → `Suggestion` row.
-3. Review queue page (old vs new, Approve / Reject, Copy, spend total).
-4. Approve `new_page` → WP draft with `[AI DRAFT]` prefix → store `wpPostId` → audit log.
-5. History page.
-6. End-to-end test on the real site. Then trash any test drafts.
+**Day 1 result: all 7 steps done** (commits on `ab-main` up to `65bbd70`). Deviations: `docker-compose.yml` untouched, overrides live in `docker-compose.override.yml`; crawler speed made configurable (upstream edit, listed in `docs/AB-CODEMAP.md`); tables named `AbSuggestion` / `AbAuditLog`.
+
+### Day 2 (Tuesday): the "hands" + demo-ready
+
+**Target by end of Day 2:** the founder, who is not technical, opens a link on her own computer and shows clients the full loop, without help. Clients watch; only `@ab-businesssupport.com` accounts can log in. This is marketing/demo use for now.
+
+Must have:
+1. AI jobs registered in `extensions/index.ts` (`registerJobHandler` + `enqueueJob`). On Vercel, jobs run inline in the request: every route that starts an AI job exports `maxDuration = 300`.
+2. "Suggest fix" button on crawl issues (missing or weak title / meta description) → job → `AbSuggestion` (pending). Hard length check on output (title ≤ 60, meta ≤ 155 characters).
+3. "New page draft" form (BPO Services, Customer Support Outsourcing, Offshore Staffing) → job → `AbSuggestion` (pending), using `extensions/ab/content/company-facts.md`.
+4. Review queue at `/sites/[siteId]/ab`: old vs new side by side, big Approve / Reject, Copy button, cost in plain words, total spend.
+5. Approve `new_page` → WordPress draft (`[AI DRAFT]` prefix) → store `wpPostId` → `AbAuditLog`. Approve / reject always logged.
+6. History page from `AbAuditLog`.
+7. Branding for clients: "AI Website Optimizer by AB" on our pages, sidebar link to them, `CRAWLSEO_HIDE_CLOUD_PROMO=true`.
+8. End-to-end test locally on the real site, then trash test drafts.
+9. **Deploy to Vercel Hobby + Neon free** (Zj creates both accounts and pastes secrets):
+   - Neon: US East region (Vercel functions are pinned to `iad1`), use the **direct** connection string as `DATABASE_URL`.
+   - Vercel build command: `prisma generate && prisma migrate deploy && next build`.
+   - Env vars for **Production only** (no preview deployments on the real DB); mark secrets Sensitive. Same vars as `.env`, plus `CRON_SECRET`, `CRAWLSEO_HIDE_CLOUD_PROMO=true`, `CRAWL_BATCH_SIZE=4`, `CRAWL_FETCH_TIMEOUT_MS=30000`, `NEXTAUTH_URL` = the Vercel URL.
+   - Google Cloud OAuth client: add the Vercel URL as origin and `<url>/api/auth/callback/google` as redirect.
+   - After Zj and the founder sign in once: `DISABLE_REGISTRATION=true`.
+   - Fresh DB: add the site and crawl again on Vercel (about 75 s).
+10. One-page demo script for the founder (`docs/AB-DEMO.md`): the clicks and what to say.
+
+Nice to have (drop if short on time): dashboard summary card, History polish, why the crawl health score shows 0.
 
 ### Wednesday morning: buffer + demo prep
-- Fix bugs, run the demo script once start to finish, write a short `docs/AB-README.md` (how to start, stop, back up DB).
+- Fix bugs, run the demo on the Vercel link start to finish, write `docs/AB-README.md` (start, stop, back up DB, deploy).
+- Fallback if Vercel fails: demo by screen share from the laptop.
+
+### Open items carried from Day 1
+- Zj: trash WordPress draft 1442.
+- Zj: share the questionnaire with staff; answers become company facts v2.
+- Decide: keep or drop the `Co-Authored-By` line in commits (upstream `CLAUDE.md` says no AI attribution; it applies to upstream, not this fork).
+- AI client has no refusal fallback (only on the SDK beta endpoint). Refusals fail with a clear error.
+- `package-lock.json` was merged by hand: on Windows, `npm install` strips the `libc` markers the Linux builds need. Do not regenerate it; merge by hand.
 
 ## 9. Demo script
-1. Open `localhost:3001` → dashboard with real issues.
+1. Open the Vercel link (fallback `localhost:3001`) → dashboard with real issues. Open it a minute early: Neon free wakes from sleep in a few seconds.
 2. Pick a page with a weak/missing title or description → Suggest fix → show old vs new → Approve → Copy.
 3. Generate "BPO Services" page draft → Approve → open WordPress Pages → Drafts → it's there, not live.
 4. Show History.
