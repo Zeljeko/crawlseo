@@ -20,9 +20,15 @@ import {
   type SkipReason,
 } from "./robots";
 
-const BATCH_SIZE = 15;
+// AB fork: CRAWL_BATCH_SIZE and CRAWL_FETCH_TIMEOUT_MS override these for slow
+// hosts. Unset keeps the upstream defaults.
+function envInt(name: string, fallback: number): number {
+  const n = Number(process.env[name]);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+const BATCH_SIZE = envInt("CRAWL_BATCH_SIZE", 15);
 const BATCH_DELAY_MS = 100;
-const FETCH_TIMEOUT_MS = 12_000;
+const FETCH_TIMEOUT_MS = envInt("CRAWL_FETCH_TIMEOUT_MS", 12_000);
 // How often a running crawl records progress at most (lastProgressAt, pagesFound).
 // lib/crawler/lifecycle.ts treats a crawl that stops recording it as interrupted.
 const PROGRESS_EVERY_MS = 5_000;

@@ -12,3 +12,10 @@ services:
   worker:
     # Same image the app service builds.
     image: ab-website-optimizer:local
+    environment:
+      # The AB site answers in 2+ s per page. Fewer parallel requests and a
+      # longer timeout avoid false BROKEN_LINK timeouts (lib/crawler/engine.ts).
+      # Set here, not in .env: Vitest loads .env and the crawler tests expect
+      # the upstream defaults.
+      CRAWL_BATCH_SIZE: "4"
+      CRAWL_FETCH_TIMEOUT_MS: "30000"
