@@ -193,7 +193,7 @@ export default async function AbOptimizerPage({ params }: Props) {
         id="fix"
         title="Fix titles and descriptions"
         aside={latest?.finishedAt ? `Last scan ${formatDay(latest.finishedAt)}` : undefined}
-        lead="Open a group, pick a page, and the AI writes a better version for you to review."
+        lead="Open a group, pick a page, and the AI writes a better version for you to review. Long groups scroll inside the box."
       >
         {!latest ? (
           <EmptyLine>No scan yet. Open Website scan in the menu and run one; it takes about a minute.</EmptyLine>
@@ -201,10 +201,10 @@ export default async function AbOptimizerPage({ params }: Props) {
           <EmptyLine>Every page has a good title and meta description.</EmptyLine>
         ) : (
           <GroupList>
-            {sortedGroups.map((g, i) => {
+            {sortedGroups.map((g) => {
               const text = GROUP_TEXT[g.field][g.kind];
               return (
-                <ProblemGroup key={`${g.field}|${g.kind}`} count={g.rows.length} title={text.title(g.rows.length)} why={text.why} open={i === 0}>
+                <ProblemGroup key={`${g.field}|${g.kind}`} count={g.rows.length} title={text.title(g.rows.length)} why={text.why}>
                   {g.rows.map((r) => (
                     <GroupRow
                       key={r.url}

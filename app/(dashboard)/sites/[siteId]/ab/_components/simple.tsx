@@ -109,7 +109,10 @@ export function ProblemGroup({
       </summary>
       <div className="px-5 pb-4 sm:pl-[calc(3ch+2.5rem)]">
         {tags && <div className="mb-2 flex items-center gap-3 sm:hidden">{tags}</div>}
-        {children}
+        {/* Long groups scroll inside, so opening one never pushes the rest of the page far down. */}
+        <div tabIndex={0} role="region" aria-label={title} className="max-h-[min(60vh,440px)] overflow-y-auto overscroll-contain pr-1 focus-visible:outline-offset-2">
+          {children}
+        </div>
       </div>
     </details>
   );
