@@ -185,27 +185,30 @@ describe("computeHealthScore", () => {
     expect(computeHealthScore([], 0)).toBe(0);
   });
 
-  it("deducts 8 points per CRITICAL issue", () => {
-    expect(computeHealthScore([issue("CRITICAL")], 10)).toBe(92);
+  // AB fork: penalty per issue averaged over the pages (25 / 8 / 2).
+  it("deducts 25 points per CRITICAL issue per page", () => {
+    expect(computeHealthScore([issue("CRITICAL")], 1)).toBe(75);
+    expect(computeHealthScore([issue("CRITICAL")], 10)).toBe(98);
   });
 
-  it("deducts 3 points per WARNING issue", () => {
-    expect(computeHealthScore([issue("WARNING")], 10)).toBe(97);
-  });
-
-  it("deducts 1 point per INFO issue", () => {
-    expect(computeHealthScore([issue("INFO")], 10)).toBe(99);
+  it("deducts 8 points per WARNING and 2 per INFO issue per page", () => {
+    expect(computeHealthScore([issue("WARNING")], 1)).toBe(92);
+    expect(computeHealthScore([issue("INFO")], 1)).toBe(98);
   });
 
   it("floors at 0, never goes negative", () => {
     const many = Array.from({ length: 20 }, () => issue("CRITICAL"));
-    expect(computeHealthScore(many, 10)).toBe(0);
+    expect(computeHealthScore(many, 4)).toBe(0);
   });
 
-  it("handles mixed severities", () => {
-    const issues = [issue("CRITICAL"), issue("WARNING"), issue("INFO")];
-    // 100 - 8 - 3 - 1 = 88
-    expect(computeHealthScore(issues, 5)).toBe(88);
+  it("stays meaningful on a mid-size site with many issues", () => {
+    // 39 pages, 2 critical, 89 warning, 57 info: 100 - 876 / 39 = 78
+    const issues = [
+      ...Array.from({ length: 2 }, () => issue("CRITICAL")),
+      ...Array.from({ length: 89 }, () => issue("WARNING")),
+      ...Array.from({ length: 57 }, () => issue("INFO")),
+    ];
+    expect(computeHealthScore(issues, 39)).toBe(78);
   });
 });
 

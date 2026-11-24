@@ -969,15 +969,15 @@ export function issuesFromPage(page: PageSnapshot, _seedOrigin: string): IssueIn
   return issues;
 }
 
+// AB fork: the penalty is averaged per page. The upstream sum (8/3/1 points per
+// issue off 100) reached 0 on any site with more than a few dozen issues.
+export const HEALTH_PENALTY = { CRITICAL: 25, WARNING: 8, INFO: 2 } as const;
+
 export function computeHealthScore(issues: IssueInput[], pagesFound: number): number {
   if (pagesFound === 0) return 0;
-  let score = 100;
-  for (const issue of issues) {
-    if (issue.severity === "CRITICAL") score -= 8;
-    else if (issue.severity === "WARNING") score -= 3;
-    else score -= 1;
-  }
-  return Math.max(0, Math.min(100, Math.round(score)));
+  let penalty = 0;
+  for (const issue of issues) penalty += HEALTH_PENALTY[issue.severity] ?? HEALTH_PENALTY.INFO;
+  return Math.max(0, Math.min(100, Math.round(100 - penalty / pagesFound)));
 }
 
 /* ------------------------------------------------------------------ */
@@ -1473,7 +1473,8 @@ async function executeCrawl(
   const robotsReport = robots.report();
 
   /* ---- Compute scores ---- */
-  const healthScore = computeHealthScore(issues, pages.length);
+  // AB fork: averaged over the audited (indexable) pages, so noindex pages change nothing.
+  const healthScore = computeHealthScore(issues, audited.length);
   const avgContentScore =
     audited.length > 0
       ? Math.round(

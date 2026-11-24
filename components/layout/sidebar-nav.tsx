@@ -123,6 +123,7 @@ export function SidebarNav({
     ? {
         label: "AI Website Optimizer",
         items: [
+          { href: `/sites/${activeSiteId}/ab/dashboard`, label: "Dashboard", icon: LayoutDashboard },
           { href: `/sites/${activeSiteId}/ab`, label: "AI Optimizer", icon: Sparkles, exact: true },
           { href: `/sites/${activeSiteId}/ab/history`, label: "History", icon: History },
           { href: `/sites/${activeSiteId}/crawl`, label: "Website scan", icon: Bug },

@@ -107,6 +107,7 @@ describe("sidebar home and workspace switcher", () => {
     expect(html).toContain('aria-label="Workspace: Alpha.example"');
     expect(html).toContain(">Alpha.example<");
     expect(html).toContain(">AI Website Optimizer<");
+    expect(html).toContain('href="/sites/site-a/ab/dashboard"');
     expect(html).toContain('href="/sites/site-a/ab"');
     expect(html).toContain(">Show all tools<");
     expect(html).not.toContain(">Research<");

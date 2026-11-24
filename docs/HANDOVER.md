@@ -163,6 +163,14 @@ Must have:
 
 Nice to have (drop if short on time): dashboard summary card, History polish, why the crawl health score shows 0.
 
+**Day 2 progress (2026-11-24):**
+- Must-haves 1 to 8 done and tested on the real site (full loop, 7 cents of AI). Test drafts 1442 and 1443 trashed by Zj.
+- Keel look (company design system, `D:/Codebases/keel`), AB rebrand and a simple menu (Dashboard, AI Optimizer, History, Website scan, Site settings; "Show all tools" for the rest).
+- Health score fixed (was 0/100 on the AB site; now averaged per page).
+- Dashboard is the first page after login. `?demo=1` shows sample numbers for gallery photos only; never present them as AB's real results. Without it the page shows real data.
+- MCP server: not needed for the MVP.
+- Founder note: sites belong to one user account, so the founder adds the AB site under her own login on Vercel and runs a scan once.
+
 ### Wednesday morning: buffer + demo prep
 - Fix bugs, run the demo on the Vercel link start to finish, write `docs/AB-README.md` (start, stop, back up DB, deploy).
 - Fallback if Vercel fails: demo by screen share from the laptop.

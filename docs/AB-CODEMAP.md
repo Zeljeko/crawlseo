@@ -62,7 +62,7 @@ Every change to an upstream file. Keep this list short.
 
 | File | Change | Why |
 |---|---|---|
-| `lib/crawler/engine.ts` | `BATCH_SIZE` and `FETCH_TIMEOUT_MS` read `CRAWL_BATCH_SIZE` / `CRAWL_FETCH_TIMEOUT_MS` from env; defaults unchanged | The AB site needs 2+ s per page. 15 parallel requests pushed it to ~14 s and past the 12 s timeout, so pages showed as false `BROKEN_LINK`. No hook controls crawl speed |
+| `lib/crawler/engine.ts` | `BATCH_SIZE` and `FETCH_TIMEOUT_MS` read `CRAWL_BATCH_SIZE` / `CRAWL_FETCH_TIMEOUT_MS` from env; defaults unchanged. `computeHealthScore`: penalty 25/8/2 per critical/warning/info issue, averaged over the audited pages (was 8/3/1 off 100 in total, which hit 0 on the AB site); tests in `engine.test.ts` updated | The AB site needs 2+ s per page. 15 parallel requests pushed it to ~14 s and past the 12 s timeout, so pages showed as false `BROKEN_LINK`. No hook controls crawl speed |
 | `prisma/schema.prisma` | Appended block "AB FORK" with `AbSuggestion`, `AbAuditLog` at the end. No upstream model touched | Our tables. Migration `20261123100616_ab_suggestion_audit_log` only creates them |
 | `components/layout/sidebar-nav.tsx` | "AI Optimizer" link in the Workspace group; simple mode: short AB menu (AI Optimizer, History, Website scan, Site settings) by default, "Show all tools" switch (localStorage `ab-show-all-tools`) for the full menu | Way into our pages, focused menu for the founder; there is no UI hook |
 | `app/layout.tsx` | Imports `app/ab-theme.css` after `globals.css`; AB title and theme colour | Keel look and AB name |
@@ -78,7 +78,8 @@ Not upstream edits (new files only): `docker-compose.override.yml` (build from f
 
 - `app/ab-theme.css` maps crawlseo's CSS variables (`app/globals.css` `:root`) to the light theme of Keel, the company design system at `D:/Codebases/keel` (`dist/keel.css`): navy rail and primary buttons, stone canvas, system fonts, sentence-case buttons, Keel status colours, radii 3/5/8. Values are copied, not linked: when Keel changes, copy them again. Light theme only (crawlseo has no dark mode).
 - `components/ab/logo.tsx`: AB tile plus "AI Website Optimizer", same props as the crawlseo logo.
-- `app/(dashboard)/start/page.tsx`: where login lands; opens `/sites/<first site>/ab`.
+- `app/(dashboard)/start/page.tsx`: where login lands; opens `/sites/<first site>/ab/dashboard`.
+- Dashboard: `app/(dashboard)/sites/[siteId]/ab/dashboard/page.tsx`, data in `extensions/ab/dashboard.ts` (`getDashboardData` reads crawls, `AuditPage`, `AbSuggestion`, `AbAuditLog` and the GSC `Page` table; empty blocks say so). `?demo=1` shows `demoDashboard()` sample numbers for screenshots: never present them as AB's real results.
 
 ## Local settings (`.env`, not committed)
 
