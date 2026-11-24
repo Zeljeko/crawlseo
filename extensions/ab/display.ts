@@ -3,7 +3,10 @@
 export function costInWords(usd: number): string {
   if (usd <= 0) return "free";
   if (usd < 0.01) return "less than 1 cent";
-  if (usd < 1) return `about ${Math.round(usd * 100)} cents`;
+  if (usd < 1) {
+    const cents = Math.round(usd * 100);
+    return `about ${cents} ${cents === 1 ? "cent" : "cents"}`;
+  }
   return `about $${usd.toFixed(2)}`;
 }
 

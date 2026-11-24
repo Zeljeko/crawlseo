@@ -25,6 +25,7 @@ describe("costInWords", () => {
     expect(costInWords(0)).toBe("free");
     expect(costInWords(0.004)).toBe("less than 1 cent");
     expect(costInWords(0.07)).toBe("about 7 cents");
+    expect(costInWords(0.011)).toBe("about 1 cent");
     expect(costInWords(1.92)).toBe("about $1.92");
   });
 });
