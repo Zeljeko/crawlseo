@@ -167,7 +167,8 @@ Nice to have (drop if short on time): dashboard summary card, History polish, wh
 - Must-haves 1 to 8 done and tested on the real site (full loop, 7 cents of AI). Test drafts 1442 and 1443 trashed by Zj.
 - Keel look (company design system, `D:/Codebases/keel`), AB rebrand and a simple menu (Dashboard, AI Optimizer, History, Website scan, Site settings; "Show all tools" for the rest).
 - Health score fixed (was 0/100 on the AB site; now averaged per page).
-- Dashboard is the first page after login. `?demo=1` shows sample numbers for gallery photos only; never present them as AB's real results. Without it the page shows real data.
+- Dashboard is the first page after login. For now it shows **sample numbers by default**, also on Vercel (Zj's call). Set `AB_DASHBOARD_DATA=real` to switch to real data; `?real=1` previews it. Never present the sample numbers as AB's real results.
+- Simple view layouts (impeccable layout pass): every AB page leads with a strip of counts and next steps, problems are grouped in plain words, details fold open. New page `/ab/scan` (Website scan in plain words).
 - MCP server: not needed for the MVP.
 - Founder note: sites belong to one user account, so the founder adds the AB site under her own login on Vercel and runs a scan once.
 

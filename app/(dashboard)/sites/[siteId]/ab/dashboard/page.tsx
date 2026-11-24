@@ -8,15 +8,18 @@ import { PageHeader } from "@/components/ui/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { demoDashboard, getDashboardData, type Change, type DailyPoint, type DashboardData } from "@/extensions/ab/dashboard";
 import { ACTION_LABELS, AI_BUDGET_USD, costInWords, typeLabel } from "@/extensions/ab/display";
+import { ActionStrip } from "../_components/simple";
 
 /*
- * AB fork: Dashboard, the first page after login. Real data by default; ?demo=1
- * shows sample numbers (extensions/ab/dashboard.ts) for screenshots only.
+ * AB fork: Dashboard, the first page after login. For now it shows sample
+ * numbers (extensions/ab/dashboard.ts) by default, as Zj decided on 2026-11-24:
+ * set AB_DASHBOARD_DATA=real to show real data. ?real=1 and ?demo=1 force one
+ * view. The sample numbers are not AB results.
  */
 
 interface Props {
   params: Promise<{ siteId: string }>;
-  searchParams: Promise<{ demo?: string }>;
+  searchParams: Promise<{ demo?: string; real?: string }>;
 }
 
 const NAVY = "#0f264c";
@@ -207,7 +210,8 @@ export default async function AbDashboardPage({ params, searchParams }: Props) {
   const site = await db.site.findUnique({ where: { id: siteId }, select: { userId: true, domain: true } });
   if (!site || site.userId !== session?.user?.id) redirect("/sites");
 
-  const demo = (await searchParams).demo === "1";
+  const sp = await searchParams;
+  const demo = sp.demo === "1" || (sp.real !== "1" && process.env.AB_DASHBOARD_DATA !== "real");
   const d: DashboardData = demo ? demoDashboard() : await getDashboardData(db, siteId);
   const s = d.search;
   const fixed = d.issues ? Math.max(0, d.issues.atFirstScan - d.issues.open) : 0;
@@ -231,6 +235,25 @@ export default async function AbDashboardPage({ params, searchParams }: Props) {
         }
       />
 
+      <ActionStrip
+        items={[
+          {
+            value: d.ai.pending ? String(d.ai.pending) : "0",
+            label: d.ai.pending === 1 ? "Suggestion waiting for you" : "Suggestions waiting for you",
+            hint: d.ai.pending ? "Approve or reject in the AI Optimizer" : "Nothing to review right now",
+            href: `/sites/${siteId}/ab#review`,
+          },
+          {
+            value: d.issues ? String(d.issues.open) : "None",
+            label: "Problems still open",
+            hint: d.issues ? `${fixed} fixed since the first scan` : "Run the first website scan",
+            href: `/sites/${siteId}/ab/scan`,
+          },
+          { value: costInWords(d.ai.spendUsd).replace(/^about /, ""), label: "AI spend so far", hint: "Budget $" + AI_BUDGET_USD, href: `/sites/${siteId}/ab/history` },
+        ]}
+      />
+
+      {s ? (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
           label="Website health"
@@ -242,6 +265,22 @@ export default async function AbDashboardPage({ params, searchParams }: Props) {
         <Kpi label="Times shown in Google" value={s ? nf.format(s.impressions.now) : "Waiting"} unit={s ? "28 days" : undefined} trend={s ? pctTrend(s.impressions) : null} />
         <Kpi label="Average position" value={s ? s.position.now.toFixed(1) : "Waiting"} trend={s ? positionTrend(s.position) : null} />
       </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]">
+          <Kpi
+            label="Website health"
+            value={d.health ? String(d.health.now) : "No scan"}
+            unit={d.health ? "/ 100" : undefined}
+            trend={d.health && d.health.before !== null ? pctTrend({ now: d.health.now, before: d.health.before }, "since the first scan") : null}
+          />
+          <Card className="flex flex-col justify-center gap-1">
+            <p className="text-[15px] font-semibold text-text-strong">Google numbers are on their way</p>
+            <p className="max-w-[60ch] text-[13px] text-muted-foreground">
+              Clicks, impressions and average position appear here a few days after Search Console is connected.
+            </p>
+          </Card>
+        </div>
+      )}
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">

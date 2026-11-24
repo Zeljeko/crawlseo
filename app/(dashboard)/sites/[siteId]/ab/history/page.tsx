@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, FileText, Sparkles, TriangleAlert, X, type LucideIcon } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDay } from "@/lib/format";
 import { PageHeader } from "@/components/ui/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { ACTION_LABELS, costInWords, typeLabel } from "@/extensions/ab/display";
+import { EmptyLine, pathOf } from "../_components/simple";
 
-/* AB fork: every AI suggestion, decision and WordPress write, newest first (from AbAuditLog). */
+/* AB fork: every AI suggestion, decision and WordPress write, grouped by day (from AbAuditLog). */
 
 interface Props {
   params: Promise<{ siteId: string }>;
@@ -24,13 +25,32 @@ type Details = {
   error?: string;
 };
 
-function pathOf(url: string): string {
-  try {
-    const u = new URL(url);
-    return u.pathname === "/" ? "Home page" : decodeURI(u.pathname);
-  } catch {
-    return url;
-  }
+const ICONS: Record<string, { Icon: LucideIcon; cls: string }> = {
+  "suggestion.created": { Icon: Sparkles, cls: "text-text-strong" },
+  "suggestion.approved": { Icon: Check, cls: "text-success" },
+  "suggestion.rejected": { Icon: X, cls: "text-muted-foreground" },
+  "wordpress.draft_created": { Icon: FileText, cls: "text-text-strong" },
+  "wordpress.draft_failed": { Icon: TriangleAlert, cls: "text-danger" },
+};
+
+function dayKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function dayLabel(key: string, today: string, yesterday: string): string {
+  if (key === today) return "Today";
+  if (key === yesterday) return "Yesterday";
+  return formatDay(key);
+}
+
+/** Today's and yesterday's day keys (UTC), read once per request. */
+function todayKeys(): { today: string; yesterday: string } {
+  const now = Date.now();
+  return { today: dayKey(new Date(now)), yesterday: dayKey(new Date(now - 86_400_000)) };
+}
+
+function timeOf(d: Date): string {
+  return d.toISOString().slice(11, 16);
 }
 
 export default async function AbHistoryPage({ params }: Props) {
@@ -45,63 +65,71 @@ export default async function AbHistoryPage({ params }: Props) {
     take: 200,
   });
 
+  const days = new Map<string, typeof entries>();
+  for (const e of entries) {
+    const k = dayKey(e.createdAt);
+    days.set(k, [...(days.get(k) ?? []), e]);
+  }
+  const { today, yesterday } = todayKeys();
+
   return (
-    <div>
+    <div className="max-w-[900px]">
       <PageHeader
         title="History"
-        meta={`AI Website Optimizer by AB · ${site.domain} · ${entries.length} entries`}
-        description="Every AI suggestion, every approve or reject, and every WordPress draft, with who did it and when."
+        description={`Every AI suggestion, every approve or reject, and every WordPress draft for ${site.domain}, newest first. Times in UTC.`}
         actions={
           <Link href={`/sites/${siteId}/ab`} className={buttonVariants({ variant: "outline" })}>
             <ArrowLeft />
-            Back
+            AI Optimizer
           </Link>
         }
       />
       {entries.length === 0 ? (
-        <p className="text-[14px] text-muted-foreground">Nothing yet.</p>
+        <EmptyLine>Nothing yet. Suggestions and decisions show up here as they happen.</EmptyLine>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[680px] text-left">
-            <thead>
-              <tr className="border-b border-border bg-bg-soft text-[12px] text-muted-foreground">
-                <th className="px-4 py-2 font-normal">When</th>
-                <th className="px-4 py-2 font-normal">What happened</th>
-                <th className="px-4 py-2 font-normal">About</th>
-                <th className="px-4 py-2 font-normal">Who</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e) => {
-                const d = (e.details ?? {}) as Details;
-                return (
-                  <tr key={e.id} className="border-b border-border align-top last:border-0">
-                    <td className="px-4 py-2.5 text-[13px] whitespace-nowrap">{formatDay(e.createdAt, { time: true })}</td>
-                    <td className="px-4 py-2.5 text-[13px]">
-                      {ACTION_LABELS[e.action] ?? e.action}
-                      {typeof d.estCostUsd === "number" && (
-                        <span className="text-muted-foreground"> (cost {costInWords(d.estCostUsd)})</span>
-                      )}
-                      {d.error && <div className="text-[12px] text-danger">{d.error}</div>}
-                    </td>
-                    <td className="px-4 py-2.5 text-[13px]">
-                      {d.type ? typeLabel(d.type) : e.targetType}
-                      {d.pageUrl && <span className="text-muted-foreground"> · {pathOf(d.pageUrl)}</span>}
-                      {d.topic && <span className="text-muted-foreground"> · {d.topic}</span>}
-                      {d.editUrl && (
-                        <div>
-                          <a href={d.editUrl} target="_blank" rel="noreferrer" className="text-[12px] text-link">
-                            WordPress draft #{d.wpPostId}
-                          </a>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-[13px] text-muted-foreground">{e.actor}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="flex flex-col gap-8">
+          {[...days.entries()].map(([key, list]) => (
+            <section key={key}>
+              <h2 className="mb-2 text-[15px] font-semibold text-text-strong">
+                {dayLabel(key, today, yesterday)}
+                <span className="ml-2 text-[13px] font-normal text-muted-foreground">{list.length} {list.length === 1 ? "event" : "events"}</span>
+              </h2>
+              <ol className="rounded-lg border border-border bg-bg">
+                {list.map((e) => {
+                  const d = (e.details ?? {}) as Details;
+                  const icon = ICONS[e.action] ?? ICONS["suggestion.created"];
+                  const what = [d.type ? typeLabel(d.type) : null, d.topic ?? (d.pageUrl ? pathOf(d.pageUrl) : null)].filter(Boolean).join(" · ");
+                  return (
+                    <li key={e.id} className="flex gap-3 border-b border-border px-4 py-3 last:border-0">
+                      <icon.Icon className={`mt-0.5 size-4 shrink-0 ${icon.cls}`} aria-hidden />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px]">
+                          <span className="font-semibold text-text-strong">{ACTION_LABELS[e.action] ?? e.action}</span>
+                          {what && <span className="text-muted-foreground"> · {what}</span>}
+                        </p>
+                        <p className="mt-0.5 text-[12px] text-muted-foreground">
+                          {e.actor}
+                          {typeof d.estCostUsd === "number" && <> · AI cost {costInWords(d.estCostUsd)}</>}
+                          {d.editUrl && (
+                            <>
+                              {" · "}
+                              <a href={d.editUrl} target="_blank" rel="noreferrer" className="text-link">
+                                WordPress draft #{d.wpPostId}
+                              </a>
+                            </>
+                          )}
+                        </p>
+                        {d.error && <p className="mt-0.5 text-[12px] text-danger">{d.error}</p>}
+                      </div>
+                      <time dateTime={e.createdAt.toISOString()} className="shrink-0 text-[12px] text-muted-foreground tabular-nums">
+                        {timeOf(e.createdAt)}
+                      </time>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ))}
         </div>
       )}
     </div>

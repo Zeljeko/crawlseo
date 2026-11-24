@@ -79,7 +79,8 @@ Not upstream edits (new files only): `docker-compose.override.yml` (build from f
 - `app/ab-theme.css` maps crawlseo's CSS variables (`app/globals.css` `:root`) to the light theme of Keel, the company design system at `D:/Codebases/keel` (`dist/keel.css`): navy rail and primary buttons, stone canvas, system fonts, sentence-case buttons, Keel status colours, radii 3/5/8. Values are copied, not linked: when Keel changes, copy them again. Light theme only (crawlseo has no dark mode).
 - `components/ab/logo.tsx`: AB tile plus "AI Website Optimizer", same props as the crawlseo logo.
 - `app/(dashboard)/start/page.tsx`: where login lands; opens `/sites/<first site>/ab/dashboard`.
-- Dashboard: `app/(dashboard)/sites/[siteId]/ab/dashboard/page.tsx`, data in `extensions/ab/dashboard.ts` (`getDashboardData` reads crawls, `AuditPage`, `AbSuggestion`, `AbAuditLog` and the GSC `Page` table; empty blocks say so). `?demo=1` shows `demoDashboard()` sample numbers for screenshots: never present them as AB's real results.
+- Dashboard: `app/(dashboard)/sites/[siteId]/ab/dashboard/page.tsx`, data in `extensions/ab/dashboard.ts`. **Shows sample numbers (`demoDashboard()`) by default** (Zj, 2026-11-24, also on Vercel); set `AB_DASHBOARD_DATA=real` to show real data. `?real=1` / `?demo=1` force one view. Never present the sample numbers as AB's real results.
+- Simple view layouts: `app/(dashboard)/sites/[siteId]/ab/_components/simple.tsx` (ActionStrip, QuietSection, ProblemGroup, SeverityTag). AI Optimizer groups weak titles and descriptions by kind of problem; `/ab/scan` shows the latest crawl grouped by issue type in plain words (`ISSUE_TEXT` in `extensions/ab/display.ts`, a test checks every `IssueType`); History is grouped by day. The simple menu's "Website scan" opens `/ab/scan`; the upstream `/crawl` page stays the full technical report.
 
 ## Local settings (`.env`, not committed)
 
