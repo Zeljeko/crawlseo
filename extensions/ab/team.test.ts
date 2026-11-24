@@ -28,6 +28,23 @@ describe("team config", () => {
   });
 });
 
+describe("company mode (owner only, no list)", () => {
+  const company = { AB_TEAM_OWNER_EMAIL: "owner@ab.test" };
+
+  it("lets anyone with the owner's domain in, as a teammate", () => {
+    expect(isAllowedEmail("anyone@AB.test", company)).toBe(true);
+    expect(isSharedGuest("anyone@ab.test", company)).toBe(true);
+    expect(isSharedGuest("owner@ab.test", company)).toBe(false);
+  });
+
+  it("refuses other domains, also look-alikes", () => {
+    expect(isAllowedEmail("x@gmail.com", company)).toBe(false);
+    expect(isAllowedEmail("x@evil-ab.test", company)).toBe(false);
+    expect(isAllowedEmail("x@ab.test.evil.com", company)).toBe(false);
+    expect(isAllowedEmail("", company)).toBe(false);
+  });
+});
+
 describe("workspaceUserId", () => {
   const db = { user: { findUnique: vi.fn().mockResolvedValue({ id: "owner-id" }) } };
 

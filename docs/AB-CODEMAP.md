@@ -69,7 +69,7 @@ Every change to an upstream file. Keep this list short.
 | `app/manifest.ts`, `app/icon.svg`, `app/favicon.ico` (deleted) | AB name and AB tile icon | Rebrand |
 | `app/page.tsx`, `app/(auth)/login/page.tsx` | Redirect to `/start` (opens the AI Optimizer); AB logo and login copy | Simple mode, rebrand |
 | `components/layout/app-shell.tsx` | Logo import from `components/ab/logo`, aria-label, `AB_SITE_SUB_PAGES` passed to the site switcher | Rebrand; switching site keeps the AB page |
-| `lib/auth.ts` | `signIn` refuses emails outside `AB_TEAM_EMAILS`; `session` maps a teammate to the owner's user id (`extensions/ab/team.ts`) | One shared workspace for the AB team |
+| `lib/auth.ts` | `signIn` refuses emails outside the team (owner's domain, or `AB_TEAM_EMAILS` when set); `session` maps a teammate to the owner's user id (`extensions/ab/team.ts`) | One shared workspace for the AB team |
 | `app/(dashboard)/settings/actions.ts` | Teammates may not delete the account or disconnect Google | They would wipe the shared workspace |
 | `components/layout/app-shell.test.tsx` | Expects the AB logo label and the simple menu; allows the `ab` route | Tests follow the fork |
 | `package.json`, `package-lock.json` | Added `@anthropic-ai/sdk` 1.12.0 (pinned) and its 6 deps | AI client. The lock was merged by hand: only new entries added. Running `npm install` on Windows (npm 10/11) strips the `libc` markers the Alpine image needs, so on conflict re-merge, do not regenerate |
@@ -86,7 +86,8 @@ Not upstream edits (new files only): `docker-compose.override.yml` (build from f
 
 ## Shared team workspace
 
-- `AB_TEAM_OWNER_EMAIL`: the account that owns the sites (Zj). `AB_TEAM_EMAILS`: everyone allowed to sign in, comma-separated (owner added automatically). Anyone else is refused.
+- `AB_TEAM_OWNER_EMAIL`: the account that owns the sites (Zj). With only this set (current setup), every account with the same email domain (@ab-businesssupport.com) signs in as a teammate; other domains are refused.
+- Optional `AB_TEAM_EMAILS`: a comma-separated list; when set, only those people may sign in (owner added automatically).
 - Teammates sign in with their own Google account but see the owner's sites; the audit log keeps their own email. Unset both and the app behaves like upstream (one workspace per user).
 - Known, pre-existing test failures: `lib/account.test.ts` (AB tables have no `User` relation, so they are not deleted with the user) and `app/(dashboard)/settings/page.test.tsx` (reads `NEXTAUTH_URL` from local `.env`).
 
