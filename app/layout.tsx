@@ -1,20 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import "./fonts";
 import "./globals.css";
+// AB fork: Keel design tokens over crawlseo's, then AB naming below.
+import "./ab-theme.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "crawlseo",
-    template: "%s · crawlseo",
+    default: "AI Website Optimizer by AB",
+    template: "%s · AI Website Optimizer",
   },
-  description: "Self-hosted SEO monitoring: GSC, crawl health, Core Web Vitals",
-  applicationName: "crawlseo",
+  description: "AI Website Optimizer by AB Business Support Services",
+  applicationName: "AI Website Optimizer",
 };
 
 // Light only: tells the browser not to darken form controls and scrollbars.
 export const viewport: Viewport = {
   colorScheme: "light",
-  themeColor: "#ffffff",
+  themeColor: "#0f264c",
 };
 
 // Earlier versions stored a theme choice under this key. The app is light only

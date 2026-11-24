@@ -64,10 +64,21 @@ Every change to an upstream file. Keep this list short.
 |---|---|---|
 | `lib/crawler/engine.ts` | `BATCH_SIZE` and `FETCH_TIMEOUT_MS` read `CRAWL_BATCH_SIZE` / `CRAWL_FETCH_TIMEOUT_MS` from env; defaults unchanged | The AB site needs 2+ s per page. 15 parallel requests pushed it to ~14 s and past the 12 s timeout, so pages showed as false `BROKEN_LINK`. No hook controls crawl speed |
 | `prisma/schema.prisma` | Appended block "AB FORK" with `AbSuggestion`, `AbAuditLog` at the end. No upstream model touched | Our tables. Migration `20261123100616_ab_suggestion_audit_log` only creates them |
-| `components/layout/sidebar-nav.tsx` | One "AI Optimizer" link (and the `Sparkles` icon import) in the Workspace group | Way into our pages; there is no UI hook |
+| `components/layout/sidebar-nav.tsx` | "AI Optimizer" link in the Workspace group; simple mode: short AB menu (AI Optimizer, History, Website scan, Site settings) by default, "Show all tools" switch (localStorage `ab-show-all-tools`) for the full menu | Way into our pages, focused menu for the founder; there is no UI hook |
+| `app/layout.tsx` | Imports `app/ab-theme.css` after `globals.css`; AB title and theme colour | Keel look and AB name |
+| `app/manifest.ts`, `app/icon.svg`, `app/favicon.ico` (deleted) | AB name and AB tile icon | Rebrand |
+| `app/page.tsx`, `app/(auth)/login/page.tsx` | Redirect to `/start` (opens the AI Optimizer); AB logo and login copy | Simple mode, rebrand |
+| `components/layout/app-shell.tsx` | Logo import from `components/ab/logo`, aria-label, `AB_SITE_SUB_PAGES` passed to the site switcher | Rebrand; switching site keeps the AB page |
+| `components/layout/app-shell.test.tsx` | Expects the AB logo label and the simple menu; allows the `ab` route | Tests follow the fork |
 | `package.json`, `package-lock.json` | Added `@anthropic-ai/sdk` 1.12.0 (pinned) and its 6 deps | AI client. The lock was merged by hand: only new entries added. Running `npm install` on Windows (npm 10/11) strips the `libc` markers the Alpine image needs, so on conflict re-merge, do not regenerate |
 
 Not upstream edits (new files only): `docker-compose.override.yml` (build from fork, app on `127.0.0.1:3001`), `docs/HANDOVER.md`, this file.
+
+## Keel design (AB look)
+
+- `app/ab-theme.css` maps crawlseo's CSS variables (`app/globals.css` `:root`) to the light theme of Keel, the company design system at `D:/Codebases/keel` (`dist/keel.css`): navy rail and primary buttons, stone canvas, system fonts, sentence-case buttons, Keel status colours, radii 3/5/8. Values are copied, not linked: when Keel changes, copy them again. Light theme only (crawlseo has no dark mode).
+- `components/ab/logo.tsx`: AB tile plus "AI Website Optimizer", same props as the crawlseo logo.
+- `app/(dashboard)/start/page.tsx`: where login lands; opens `/sites/<first site>/ab`.
 
 ## Local settings (`.env`, not committed)
 

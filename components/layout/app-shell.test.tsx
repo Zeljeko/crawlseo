@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/app/(dashboard)/settings/actions", () => ({ signOutAction: vi.fn() }));
 
-const { AppShell } = await import("./app-shell");
+const { AppShell, AB_SITE_SUB_PAGES } = await import("./app-shell");
 const { APP_VERSION } = await import("@/lib/version");
 const { SiteSwitcher } = await import("@/components/sites/site-switcher");
 const { SITE_SUB_PAGES } = await import("@/lib/site-routes");
@@ -84,7 +84,7 @@ describe("sidebar home and workspace switcher", () => {
     const html = render({ name: "Mike", sites: SITES });
     expect(html).not.toContain("/dashboard");
     expect(html).not.toContain(">Dashboard<");
-    expect(html).toMatch(/<a href="\/sites" aria-label="crawlseo"|<a aria-label="crawlseo"[^>]*href="\/sites"/);
+    expect(html).toMatch(/<a href="\/sites" aria-label="AI Website Optimizer"|<a aria-label="AI Website Optimizer"[^>]*href="\/sites"/);
   });
 
   it("shows All sites in the switcher and no site groups on the home", () => {
@@ -100,14 +100,16 @@ describe("sidebar home and workspace switcher", () => {
     expect(render({ name: "Mike" })).toContain('aria-label="Workspace: All sites"');
   });
 
-  it("shows the domain in its own case and the Workspace and Research groups on a site", () => {
+  // AB fork: the simple AB menu is the default on a site; "Show all tools" brings back the full one.
+  it("shows the domain in its own case and the simple AB menu on a site", () => {
     nav.pathname = "/sites/site-a/keywords";
     const html = render({ name: "Mike", sites: SITES });
     expect(html).toContain('aria-label="Workspace: Alpha.example"');
     expect(html).toContain(">Alpha.example<");
-    expect(html).toContain(">Workspace<");
-    expect(html).toContain(">Research<");
-    expect(html).toContain('href="/sites/site-a/keywords"');
+    expect(html).toContain(">AI Website Optimizer<");
+    expect(html).toContain('href="/sites/site-a/ab"');
+    expect(html).toContain(">Show all tools<");
+    expect(html).not.toContain(">Research<");
   });
 
   it("shows a compact square with the site's first letter when collapsed", () => {
@@ -124,6 +126,6 @@ describe("sidebar home and workspace switcher", () => {
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
     expect(routes.length).toBeGreaterThan(0);
-    expect(routes.filter((r) => !(SITE_SUB_PAGES as readonly string[]).includes(r))).toEqual([]);
+    expect(routes.filter((r) => ![...SITE_SUB_PAGES, ...AB_SITE_SUB_PAGES].includes(r))).toEqual([]);
   });
 });

@@ -1,18 +1,15 @@
 import type { MetadataRoute } from "next";
 
-// Icons copied from the crawlseo-web repo, docs/brand/v3 (crawlseo-icon-192.png, crawlseo-icon-512.png).
+// AB fork: AI Website Optimizer name and the AB tile (app/icon.svg).
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "crawlseo",
-    short_name: "crawlseo",
-    description: "Self-hosted SEO monitoring: GSC, crawl health, Core Web Vitals",
-    start_url: "/sites",
+    name: "AI Website Optimizer by AB",
+    short_name: "AI Optimizer",
+    description: "AI Website Optimizer by AB Business Support Services",
+    start_url: "/start",
     display: "standalone",
-    theme_color: "#FFFFFF",
-    background_color: "#FFFFFF",
-    icons: [
-      { src: "/brand/crawlseo-icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/brand/crawlseo-icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
+    theme_color: "#0F264C",
+    background_color: "#F7F6F2",
+    icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml" }],
   };
 }

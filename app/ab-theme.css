@@ -1,0 +1,149 @@
+/*
+ * AB fork: Keel design system (D:\Codebases\keel, dist/keel.css, light theme)
+ * mapped onto crawlseo's tokens. Imported after globals.css in app/layout.tsx,
+ * so these :root values win and every Tailwind utility follows them.
+ * Values are copied from Keel; when Keel changes, copy them again here.
+ */
+
+:root {
+  /* Fonts: Keel uses the system stacks, no web fonts. */
+  --font-inter: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans";
+  --font-geist-mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, "Liberation Mono";
+
+  /* Surfaces: white cards on a warm stone canvas */
+  --bg: #ffffff;
+  --bg-soft: #f7f6f2;
+  --bg-section: #f2f0ec;
+  --border-color: #e3e2de;
+  --border-soft: #ebe9e6;
+  --line-strong: #bcbab7;
+
+  /* Text: neutral ink, never navy */
+  --text: #1c1c1a;
+  --text-strong: #1c1c1a;
+  --text-muted: #5c5a56;
+  --text-soft: #75736f;
+  --text-faint: #8a8884;
+
+  /* The old accent scale becomes Keel blue (links, eyebrows, focus, charts) */
+  --brand-50: #ebf3ff;
+  --brand-100: #d8e7fe;
+  --brand-200: #b6d0fc;
+  --brand-300: #8cb2fa;
+  --brand-400: #5f94f8;
+  --brand-500: #337af7;
+  --brand-600: #1f5fdb;
+  --brand-700: #194db2;
+  --brand-800: #173e8b;
+  --brand-900: #152f68;
+  --brand-950: #091a38;
+
+  --ink: #0f264c;
+  --ink-text: #ffffff;
+  --ink-lead: #cfd9e8;
+
+  /* Primary action: Harbour Navy */
+  --button-primary: #0f264c;
+  --button-primary-hover: #1b3156;
+  --button-secondary: #ffffff;
+  --button-secondary-hover: #ebe9e6;
+
+  /* Status (Keel flags) */
+  --success: #17653a;
+  --success-bg: #e6f6ec;
+  --warning: #654000;
+  --warning-bg: #fff4d4;
+  --danger: #a0222b;
+  --danger-bg: #fdecec;
+
+  /* shadcn aliases resolve at :root, so they are set again with the new values */
+  --background: #f7f6f2;
+  --foreground: #1c1c1a;
+  --card: #ffffff;
+  --card-foreground: #1c1c1a;
+  --popover: #ffffff;
+  --popover-foreground: #1c1c1a;
+  --primary: #0f264c;
+  --primary-foreground: #ffffff;
+  --secondary: #ffffff;
+  --secondary-foreground: #1c1c1a;
+  --muted: #f2f0ec;
+  --muted-foreground: #5c5a56;
+  --accent: #f2f0ec;
+  --accent-foreground: #1c1c1a;
+  --destructive: #a0222b;
+  --border: #e3e2de;
+  --input: #75736f;
+  --ring: #337af7;
+
+  /* Nav rail: navy in Keel */
+  --sidebar: #0f264c;
+  --sidebar-foreground: #cfd9e8;
+  --sidebar-border: #1b3156;
+
+  --chart-1: #337af7;
+  --chart-2: #a09e9b;
+  --chart-grid: #ebe9e6;
+  --chart-axis: #5c5a56;
+
+  --shadow-1: 0 1px 2px rgb(28 28 26 / 0.08);
+  --shadow-2: 0 4px 12px -2px rgb(28 28 26 / 0.16), 0 1px 3px rgb(28 28 26 / 0.1);
+  --shadow-3: 0 16px 40px -8px rgb(28 28 26 / 0.32), 0 2px 8px rgb(28 28 26 / 0.14);
+
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+}
+
+/* Inside the navy rail, the content colours switch to rail colours. */
+aside.bg-sidebar {
+  --text: #cfd9e8;
+  --text-strong: #ffffff;
+  --text-muted: #cfd9e8;
+  --text-soft: #bac7dc;
+  --foreground: #cfd9e8;
+  --muted-foreground: #cfd9e8;
+  --bg-section: #1b3156; /* hover */
+  --border-soft: #2b3f61; /* current page */
+  --border-color: #1b3156;
+  --border: #1b3156;
+  --bg: #1b3156;
+  --bg-soft: #1b3156;
+  --line-strong: #2b3f61;
+  --button-secondary: #1b3156;
+  --button-secondary-hover: #2b3f61;
+  --accent: #1b3156;
+  --accent-foreground: #ffffff;
+  color: #cfd9e8;
+}
+
+/* Keel labels and buttons: system sans, sentence case. Mono stays for data (.font-data). */
+.mono-button {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.mono-label,
+.eyebrow {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.eyebrow {
+  color: #1f5fdb;
+}
+
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline-color: #337af7;
+}
+
+::selection {
+  background: #b6d0fc;
+}

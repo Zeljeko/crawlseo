@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -18,6 +19,7 @@ import {
   Link as LinkIcon,
   SearchCheck,
   Sparkles,
+  History,
   type LucideIcon,
 } from "lucide-react";
 
@@ -33,6 +35,36 @@ type NavGroup = {
   items: NavItem[];
 };
 
+// AB fork: simple mode. The short AB menu is the default; "Show all tools"
+// brings back the full crawlseo menu, remembered in localStorage.
+const SHOW_ALL_KEY = "ab-show-all-tools";
+
+function subscribeShowAll(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(SHOW_ALL_KEY, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(SHOW_ALL_KEY, onChange);
+  };
+}
+
+function readShowAll() {
+  try {
+    return localStorage.getItem(SHOW_ALL_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setShowAll(value: boolean) {
+  try {
+    localStorage.setItem(SHOW_ALL_KEY, String(value));
+  } catch {
+    // Storage blocked: the choice lasts until the page reloads.
+  }
+  window.dispatchEvent(new Event(SHOW_ALL_KEY));
+}
+
 export function SidebarNav({
   sites,
   collapsed = false,
@@ -41,6 +73,7 @@ export function SidebarNav({
   collapsed?: boolean;
 }) {
   const pathname = usePathname();
+  const showAll = useSyncExternalStore(subscribeShowAll, readShowAll, () => false);
   const match = pathname.match(/\/sites\/([^/]+)/);
   const activeSiteId =
     match?.[1] && sites.some((s) => s.id === match[1]) ? match[1] : undefined;
@@ -51,7 +84,7 @@ export function SidebarNav({
         items: [
           { href: `/sites/${activeSiteId}`, label: "Overview", icon: LayoutDashboard, exact: true },
           // AB fork: AI Website Optimizer (app/(dashboard)/sites/[siteId]/ab)
-          { href: `/sites/${activeSiteId}/ab`, label: "AI Optimizer", icon: Sparkles },
+          { href: `/sites/${activeSiteId}/ab`, label: "AI Optimizer", icon: Sparkles, exact: true },
           { href: `/sites/${activeSiteId}/keywords`, label: "Keywords", icon: Search },
           { href: `/sites/${activeSiteId}/saved-keywords`, label: "Saved keywords", icon: Bookmark },
           { href: `/sites/${activeSiteId}/pages`, label: "Pages", icon: FileText },
@@ -86,7 +119,19 @@ export function SidebarNav({
 
   // The home (All sites, or any page outside a site) has no site groups: the
   // workspace switcher above is the way into a site.
-  const groups = [workspaceNav, researchNav, connectNav].filter(
+  const simpleNav: NavGroup | null = activeSiteId
+    ? {
+        label: "AI Website Optimizer",
+        items: [
+          { href: `/sites/${activeSiteId}/ab`, label: "AI Optimizer", icon: Sparkles, exact: true },
+          { href: `/sites/${activeSiteId}/ab/history`, label: "History", icon: History },
+          { href: `/sites/${activeSiteId}/crawl`, label: "Website scan", icon: Bug },
+          { href: `/sites/${activeSiteId}/settings`, label: "Site settings", icon: Settings },
+        ],
+      }
+    : null;
+
+  const groups = (showAll ? [workspaceNav, researchNav, connectNav] : [simpleNav]).filter(
     (g): g is NavGroup => g !== null
   );
 
@@ -111,6 +156,15 @@ export function SidebarNav({
           ))}
         </div>
       ))}
+      {!collapsed && (
+        <button
+          type="button"
+          onClick={() => setShowAll(!showAll)}
+          className="self-start px-2.5 text-[12px] leading-4 text-muted-foreground underline underline-offset-2 hover:text-text-strong"
+        >
+          {showAll ? "Simple menu" : "Show all tools"}
+        </button>
+      )}
     </nav>
   );
 }

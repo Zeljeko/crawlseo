@@ -1,7 +1,7 @@
 import { signIn, auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/brand/logo";
+import { Logo } from "@/components/ab/logo"; // AB fork: AB logo
 import { registrationClosedMessage } from "@/lib/registration";
 
 // Auth.js sends a refused sign-in back here as ?error=AccessDenied, which only
@@ -17,7 +17,7 @@ function errorMessage(error: string | string[] | undefined): string | null {
 
 // Set by the account actions (app/(dashboard)/settings/actions.ts) after they sign the user out.
 const UNREVOKED =
-  " Google did not confirm the revoke: to be sure, remove crawlseo at myaccount.google.com/permissions.";
+  " Google did not confirm the revoke: to be sure, remove AI Website Optimizer at myaccount.google.com/permissions.";
 const NOTICES: Record<string, string> = {
   disconnected: "Google is disconnected and you are signed out. Sign in again to reconnect Search Console.",
   "disconnected-unrevoked":
@@ -38,7 +38,7 @@ export default async function LoginPage({
 }) {
   const session = await auth();
   if (session) {
-    redirect("/sites");
+    redirect("/start");
   }
   const params = await searchParams;
   const error = errorMessage(params.error);
@@ -51,13 +51,13 @@ export default async function LoginPage({
           <h1 className="text-text-strong">
             <Logo className="h-8" />
           </h1>
-          <p className="text-atom-body text-muted-foreground">Self-hosted search ops for founders</p>
+          <p className="text-atom-body text-muted-foreground">AB Business Support Services</p>
         </div>
 
         <div className="panel p-8">
           <h2 className="text-atom-title font-medium">Sign in</h2>
           <p className="mt-2 text-atom-body text-muted-foreground">
-            Connect Google Search Console with read-only access.
+            Sign in with your @ab-businesssupport.com Google account.
           </p>
 
           {notice && (
@@ -76,7 +76,7 @@ export default async function LoginPage({
             className="mt-6"
             action={async () => {
               "use server";
-              await signIn("google", { redirectTo: "/sites" });
+              await signIn("google", { redirectTo: "/start" });
             }}
           >
             <Button type="submit" size="lg" className="w-full">
@@ -85,9 +85,9 @@ export default async function LoginPage({
           </form>
 
           <ul className="mt-6 space-y-1.5 border-t border-border pt-5 text-[13px] leading-5 text-muted-foreground">
-            <li>Keywords, positions and CTR from GSC</li>
-            <li>Technical crawl and Core Web Vitals</li>
-            <li>Data stays on your server</li>
+            <li>Scans the company website for SEO problems</li>
+            <li>AI writes fixes and new page drafts</li>
+            <li>A person approves every change; nothing goes live by itself</li>
           </ul>
         </div>
       </div>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { formatDay } from "@/lib/format";
-import { Logo } from "@/components/brand/logo";
+import { Logo } from "@/components/ab/logo"; // AB fork: AB logo
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { CloudPromo } from "@/components/layout/cloud-promo";
 import { SiteSwitcher } from "@/components/sites/site-switcher";
@@ -28,6 +28,9 @@ type AppShellProps = {
   sites: ShellSite[];
   showCloudPromo: boolean;
 };
+
+/** AB fork: our site routes, kept when switching site. */
+export const AB_SITE_SUB_PAGES: readonly string[] = ["ab"];
 
 const COLLAPSED_KEY = "crawlseo-sidebar-collapsed";
 
@@ -84,7 +87,7 @@ export function AppShell({ email, name, image, version, update, children, sites,
         <div className={cn("flex items-center", collapsed ? "flex-col gap-3" : "justify-between")}>
           <Link
             href={ALL_SITES_HREF}
-            aria-label="crawlseo"
+            aria-label="AI Website Optimizer"
             className={cn("flex h-8 items-center text-text-strong", !collapsed && "px-2.5")}
           >
             <Logo variant={collapsed ? "mark" : "lockup"} decorative className="h-[22px]" />
@@ -103,7 +106,7 @@ export function AppShell({ email, name, image, version, update, children, sites,
             )}
           </button>
         </div>
-        <SiteSwitcher sites={sites} collapsed={collapsed} />
+        <SiteSwitcher sites={sites} collapsed={collapsed} extraSubPages={AB_SITE_SUB_PAGES} />
       </div>
 
       <SidebarNav sites={sites} collapsed={collapsed} />
@@ -172,7 +175,7 @@ export function AppShell({ email, name, image, version, update, children, sites,
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-bg px-3 md:hidden">
           <Link
             href={ALL_SITES_HREF}
-            aria-label="crawlseo"
+            aria-label="AI Website Optimizer"
             className="flex h-11 items-center px-2 text-text-strong"
           >
             <Logo decorative className="h-[22px]" />
