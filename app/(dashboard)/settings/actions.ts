@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteAccount, disconnectGoogle } from "@/lib/account";
+// AB fork: teammates share the owner's workspace and may not delete or disconnect it.
+import { isSharedGuest, OWNER_ONLY_MESSAGE } from "@/extensions/ab/team";
 
 /*
  * Server actions: POST only, with Next.js's own Origin check. Each one acts
@@ -24,6 +26,7 @@ export async function signOutAction(): Promise<void> {
 
 export async function disconnectGoogleAction(): Promise<void> {
   const user = await sessionUser();
+  if (isSharedGuest(user.email)) throw new Error(OWNER_ONLY_MESSAGE);
   // Signed out first: disconnectGoogle ends every session of the user, this one included.
   await signOut({ redirect: false });
   const { revoked } = await disconnectGoogle(db, user.id);
@@ -37,6 +40,7 @@ export async function deleteAccountAction(
   formData: FormData
 ): Promise<DeleteAccountState> {
   const user = await sessionUser();
+  if (isSharedGuest(user.email)) return { error: OWNER_ONLY_MESSAGE };
   const typed = String(formData.get("confirmEmail") ?? "").trim().toLowerCase();
   if (!user.email || typed !== user.email.toLowerCase()) {
     return { error: "Type your account email exactly to confirm." };

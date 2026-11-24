@@ -5,6 +5,8 @@ import { db } from "./db";
 import { isSignInAllowed } from "./registration";
 import { storeSignInTokens } from "./google/token-store";
 import { syncGoogleProfile } from "./google/profile";
+// AB fork: one shared workspace for the allowed team (extensions/ab/team.ts).
+import { isAllowedEmail, workspaceUserId } from "@/extensions/ab/team";
 
 // Skipped during `next build` so the Docker image can be built without real
 // credentials.  NEXT_PHASE is set by Next.js; SKIP_ENV_VALIDATION is a manual
@@ -32,12 +34,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    signIn({ account }) {
+    async signIn({ account, user, profile }) {
+      if (!isAllowedEmail(user?.email ?? profile?.email)) return false;
       return isSignInAllowed(account);
     },
     async session({ session, user }) {
       if (session.user) {
-        session.user.id = user.id;
+        session.user.id = await workspaceUserId(db, user.email, user.id);
       }
       return session;
     },

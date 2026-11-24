@@ -69,6 +69,8 @@ Every change to an upstream file. Keep this list short.
 | `app/manifest.ts`, `app/icon.svg`, `app/favicon.ico` (deleted) | AB name and AB tile icon | Rebrand |
 | `app/page.tsx`, `app/(auth)/login/page.tsx` | Redirect to `/start` (opens the AI Optimizer); AB logo and login copy | Simple mode, rebrand |
 | `components/layout/app-shell.tsx` | Logo import from `components/ab/logo`, aria-label, `AB_SITE_SUB_PAGES` passed to the site switcher | Rebrand; switching site keeps the AB page |
+| `lib/auth.ts` | `signIn` refuses emails outside `AB_TEAM_EMAILS`; `session` maps a teammate to the owner's user id (`extensions/ab/team.ts`) | One shared workspace for the AB team |
+| `app/(dashboard)/settings/actions.ts` | Teammates may not delete the account or disconnect Google | They would wipe the shared workspace |
 | `components/layout/app-shell.test.tsx` | Expects the AB logo label and the simple menu; allows the `ab` route | Tests follow the fork |
 | `package.json`, `package-lock.json` | Added `@anthropic-ai/sdk` 1.12.0 (pinned) and its 6 deps | AI client. The lock was merged by hand: only new entries added. Running `npm install` on Windows (npm 10/11) strips the `libc` markers the Alpine image needs, so on conflict re-merge, do not regenerate |
 
@@ -81,6 +83,12 @@ Not upstream edits (new files only): `docker-compose.override.yml` (build from f
 - `app/(dashboard)/start/page.tsx`: where login lands; opens `/sites/<first site>/ab/dashboard`.
 - Dashboard: `app/(dashboard)/sites/[siteId]/ab/dashboard/page.tsx`, data in `extensions/ab/dashboard.ts`. **Shows sample numbers (`demoDashboard()`) by default** (Zj, 2026-11-24, also on Vercel); set `AB_DASHBOARD_DATA=real` to show real data. `?real=1` / `?demo=1` force one view. Never present the sample numbers as AB's real results.
 - Simple view layouts: `app/(dashboard)/sites/[siteId]/ab/_components/simple.tsx` (ActionStrip, QuietSection, ProblemGroup, SeverityTag). AI Optimizer groups weak titles and descriptions by kind of problem; `/ab/scan` shows the latest crawl grouped by issue type in plain words (`ISSUE_TEXT` in `extensions/ab/display.ts`, a test checks every `IssueType`); History is grouped by day. The simple menu's "Website scan" opens `/ab/scan`; the upstream `/crawl` page stays the full technical report.
+
+## Shared team workspace
+
+- `AB_TEAM_OWNER_EMAIL`: the account that owns the sites (Zj). `AB_TEAM_EMAILS`: everyone allowed to sign in, comma-separated (owner added automatically). Anyone else is refused.
+- Teammates sign in with their own Google account but see the owner's sites; the audit log keeps their own email. Unset both and the app behaves like upstream (one workspace per user).
+- Known, pre-existing test failures: `lib/account.test.ts` (AB tables have no `User` relation, so they are not deleted with the user) and `app/(dashboard)/settings/page.test.tsx` (reads `NEXTAUTH_URL` from local `.env`).
 
 ## Local settings (`.env`, not committed)
 
